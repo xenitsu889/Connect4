@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect-4</title>
+    <style>
+        @keyframes drop {
+            0% {
+                transform: translateY(-100vh);
+            }
+            60% {
+                transform: translateY(0);
+            }
+            80% {
+                transform: translateY(-20px);
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        
+        .container {
+            text-align: center;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(7, 50px);
+            grid-template-rows: repeat(6, 50px);
+            gap: 2px;
+            background-color: #448AFF;
+            padding: 5px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .cell {
+            width: 50px;
+            height: 50px;
+            background-color: #ECEFF1;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .drop {
+            animation: drop 0.6s ease;
+        }
+
+        .bounce {
+            animation: bounce 0.4s ease;
+            animation-delay: 0.6s; /* Delay bounce animation to start after drop */
+        }
+
+        .message {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .reset-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .reset-btn:hover {
+            background-color: #45a049;
+        }
+        
+    </style>
+</head>
+<body>
+    <h2 style="font-weight: 300; font-style: italic;">CONNECT-4</h2>
+    <div class="board"></div>
+    <div class="message"></div>
+    <button class="reset-btn">Reset Game</button>
+    <p style="font-style: italic;">~created by rajdeep</p>
+    
+    <script>
+        const board = document.querySelector('.board');
+        const message = document.querySelector('.message');
+        const resetBtn = document.querySelector('.reset-btn');
+
+        let currentPlayer = 'red';
+        let gameBoard = Array.from({ length: 6 }, () => Array.from({ length: 7 }, () => null));
+
+        function createBoard() {
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 7; col++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        function resetBoard() {
+            currentPlayer = 'red';
+            gameBoard = Array.from({ length: 6 }, () => Array.from({ length: 7 }, () => null));
+            board.innerHTML = '';
+            createBoard();
+            message.innerText = '';
+            board.addEventListener('click', handleClick);
+        }
+
+        function checkWin() {
+            // Check rows
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 4; col++) {
+                    if (
+                        gameBoard[row][col] === currentPlayer &&
+                        gameBoard[row][col + 1] === currentPlayer &&
+                        gameBoard[row][col + 2] === currentPlayer &&
+                        gameBoard[row][col + 3] === currentPlayer
+                    ) {
+                        return true;
+                    }
+                }
+            }
+
+            // Check columns
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 7; col++) {
+                    if (
+                        gameBoard[row][col] === currentPlayer &&
+                        gameBoard[row + 1][col] === currentPlayer &&
+                        gameBoard[row + 2][col] === currentPlayer &&
+                        gameBoard[row + 3][col] === currentPlayer
+                    ) {
+                        return true;
+                    }
+                }
+            }
+
+            // Check diagonals
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 4; col++) {
+                    if (
+                        gameBoard[row][col] === currentPlayer &&
+                        gameBoard[row + 1][col + 1] === currentPlayer &&
+                        gameBoard[row + 2][col + 2] === currentPlayer &&
+                        gameBoard[row + 3][col + 3] === currentPlayer
+                    ) {
+                        return true;
+                    }
+                }
+            }
+
+            for (let row = 0; row < 3; row++) {
+                for (let col = 3; col < 7; col++) {
+                    if (
+                        gameBoard[row][col] === currentPlayer &&
+                        gameBoard[row + 1][col - 1] === currentPlayer &&
+                        gameBoard[row + 2][col - 2] === currentPlayer &&
+                        gameBoard[row + 3][col - 3] === currentPlayer
+                    ) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        function checkDraw() {
+            return gameBoard.every(row => row.every(cell => cell !== null));
+        }
+
+        function handleClick(event) {
+            const col = event.target.dataset.col;
+            if (col === undefined) return;
+
+            const row = findAvailableRow(parseInt(col, 10));
+            if (row === -1) return;
+
+            gameBoard[row][col] = currentPlayer;
+            const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            cell.style.backgroundColor = currentPlayer;
+            cell.classList.add('drop'); // Add drop class to animate the cell
+
+            if (checkWin()) {
+                message.innerText = `${currentPlayer.toUpperCase()} wins!`;
+                board.removeEventListener('click', handleClick);
+            } else if (checkDraw()) {
+                message.innerText = "It's a draw!";
+                board.removeEventListener('click', handleClick);
+            } else {
+                currentPlayer = currentPlayer === 'red' ? 'yellow' : 'red';
+            }
+        }
+
+        function findAvailableRow(col) {
+            for (let row = 5; row >= 0; row--) {
+                if (gameBoard[row][col] === null) {
+                    return row;
+                }
+            }
+            return -1;
+        }
+
+        createBoard();
+        board.addEventListener('click', handleClick);
+        resetBtn.addEventListener('click', resetBoard);
+    </script>
+</body>
+</html>
